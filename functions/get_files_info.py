@@ -1,4 +1,5 @@
 import os
+from google.genai import types
 
 def get_files_info(working_directory, directory="."):
     
@@ -7,30 +8,32 @@ def get_files_info(working_directory, directory="."):
 
     valid_target_dir = os.path.commonpath([working_dir_abs, target_dir]) == working_dir_abs
 
-    print("DEBUG working_dir_abs:", working_dir_abs)
-    print("DEBUG target_dir:", target_dir)
-    print("DEBUG isdir(target_dir):", os.path.isdir(target_dir))
-
-
     if not valid_target_dir:
         return f'Error: Cannot list "{directory}" as it is outside the permitted working directory'
     if not os.path.isdir(target_dir):
         return f'Error: "{directory}" is not a directory'
     result = []
     for name in os.listdir(target_dir):
-        name_path = target_dir + "/" + name
-        size = os.path.getsize(name_path)
-        is_dir = os.path.isdir(name_path)
-        result.append(f"- {name}: file_size:={size} bytes, is_dir={is_dir}")
-    
+        try:
+            name_path = target_dir + "/" + name
+            size = os.path.getsize(name_path)
+            is_dir = os.path.isdir(name_path)
+            result.append(f"- {name}: file_size:={size} bytes, is_dir={is_dir}")
+        except Exception as e:
+            print(f"Error: could not read file information")
     return "\n".join(result)
     
-def main():
-    result1 = get_files_info("calculator", ".")
-    print("Result for current directory:")
-    print(result1)
-
-    # and similarly for the other 3 calls...
-
-if __name__ == "__main__":
-    main()
+schema_get_files_info = types.FunctionDeclaration(
+    name="get_files_info",
+    description="Lists files in a specified directory relative to the working directory, providing file size and directory status",
+    parameters=types.Schema(
+        type=types.Type.OBJECT,
+        properties={
+            "directory": types.Schema(
+                type=types.Type.STRING,
+                description="Directory path to list files from, relative to the working directory (default is the working directory itself)",
+            ),
+        },
+        required=["directory"]
+    ),  
+)
