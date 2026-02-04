@@ -31,8 +31,10 @@ def run_python_file(working_directory, file_path, args=None):
         returning_string += "Process exited with code X"
     if not process.stdout or process.stderr:
         returning_string += "No output produced"
-    else:
-        returning_string += f"STDERR: {process.stderr} + STDOUT: {process.stdout}"
+    if process.stdout:
+        returning_string += f"STDOUT: {process.stdout}"
+    if process.stderr:
+        returning_string += f"STDERR: {process.stderr}"
 
     return returning_string
 
