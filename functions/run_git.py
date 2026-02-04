@@ -11,6 +11,7 @@ ALLOWED_GIT_COMMANDS = {
     "add",
     "commit",
     "log",
+    "push"
 }
 
 def run_git(working_directory, subcommand, args):
