@@ -1,27 +1,36 @@
+from pathlib import Path
 import os
 from google.genai import types
 
 MAX_CHARS = 10000
 
+def safe_path(working_directory: str, file_path: str) -> Path:
+    root = Path(working_directory).resolve()
+    candidate = root / file_path
+    if candidate.exists() and candidate.is_symlink():
+        raise ValueError("Symlink access forbidden")
+    
+    target = candidate.resolve(strict=False)
+
+    if not target.is_relative_to(root):
+        raise ValueError("Access outside working directory is forbidden")
+    return target
+
 def get_file_content(working_directory, file_path):
-    working_dir_abs = os.path.abspath(working_directory)
-    target_file = os.path.normpath(os.path.join(working_dir_abs, file_path))
+    try:
+        target_file = safe_path(working_directory, file_path)
+    except ValueError as e:
+        return f'Error: {e}'
 
-    valid_target_file = os.path.commonpath([working_dir_abs, target_file]) == working_dir_abs
-
-    if not valid_target_file:
-        return f'Error: Cannot read "{file_path}" as it is outside the permitted working directory'
-    if not os.path.isfile(target_file):
+    if not target_file.is_file():
         return f'Error: File not found or is not a regular file: {file_path}'
     
     try:
-        with open(target_file, "r") as f:
+        with target_file.open("r", encoding="utf-8", errors="replace") as f:
             file_content_string = f.read(MAX_CHARS)
-
             if f.read(1):
                 file_content_string += f'[...File "{file_path}" truncated at {MAX_CHARS} characters]'
-
-    except Exception as e:
+    except Exception:
         return 'Error: could not read file'
 
     return file_content_string
